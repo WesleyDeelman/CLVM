@@ -1,10 +1,5 @@
 import pandas as pd
 from pathlib import Path
-import sklearn
-import category_encoders as ce
-import xgboost as xgb
-import optuna
-import matplotlib.pyplot as plt
 import rfmbinner
 
 class DataLoader:
