@@ -48,5 +48,5 @@ for _ in range(num_transactions):
 df = pd.DataFrame(transactions)
 reference_table = df.groupby('CustomerID')['TransactionID'].count().reset_index()
 customerids = reference_table[reference_table.TransactionID>=2]['CustomerID']
-df['TransactionAmount'] = df.apply(lambda x: x['TransactonAmount']*3 if x['CustomerID'] in customerids else x['TransactionAmount'], axis=1)
+df['TransactionAmount'] = df.apply(lambda x: x['TransactionAmount']*3 if x['CustomerID'] in customerids else x['TransactionAmount'], axis=1)
 df.to_csv(r'data\synthetic_transactions.csv', index=False)
