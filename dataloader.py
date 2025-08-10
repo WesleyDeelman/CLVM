@@ -40,6 +40,7 @@ class DataLoader:
                              self.transaction_id: 'TransactionID',
                              self.transaction_date: 'Date',
                              self.amount: 'Amount'}, inplace=True)
+        data['Date'] = pd.to_datetime(data['Date'],format='%Y-%m-%d')
         return data
     
     def calculate_rfm(self, snapshot_date: str, window: pd.Timedelta,df: pd.DataFrame) -> pd.DataFrame:
@@ -82,8 +83,6 @@ class DataLoader:
         """
         #caculate whether a customer made total purchases after date exceeding repurchase threshold
         data = df.copy()
-        data['Date'] = pd.to_datetime(data['Date'])
-        date = pd.to_datetime(date)
         future_purchases = data[(data['Date'] > date) & \
                                 (data['Date'] <= date + window_size)]
 
@@ -193,7 +192,7 @@ class DataLoader:
             pd.DataFrame: Deduplicated demographic data per CustomerID.
         """
         data = df.copy()
-        data['Date'] = pd.to_datetime(data['Date'])
+        data['Date'] = pd.to_datetime(data['Date'],format='%m-%d-%Y %H:%M:%S')
         
         # Sort by CustomerID and Date to get the most recent demographic info
         data = data.sort_values(by=['CustomerID', 'Date'], ascending=True)
@@ -206,9 +205,11 @@ class DataLoader:
         return deduplicated_demographics
     
 if __name__=='__main__':
-    loader = DataLoader('data\synthetic_transactions.csv','CustomerID','TransactionID','TransactionDate','TransactionAmount')
+    loader = DataLoader('data\customer_transaction_data.csv','CustomerID','TransactionID','PurchaseDate','TotalAmount')
     orig_data = loader.fetch_data()
     rfm = loader.calculate_rfm('2023-07-31',pd.Timedelta(days=99999),orig_data)
     print(rfm.head())
     demographics = loader.dedup_demographic_variables(orig_data)
     print(demographics.head())
+
+    
