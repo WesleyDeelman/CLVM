@@ -4,13 +4,13 @@ from faker import Faker
 fake = Faker()
 
 # Number of transactions you want to create
-num_transactions = 1000
+num_transactions = 100000
 
 # List of South African provinces for simplicity
 provinces = [
     'Western Cape', 'Eastern Cape', 'Northern Cape', 'Gauteng', 
     'KwaZulu-Natal', 'Limpopo', 'Mpumalanga', 'North West', 
-    'Free State', 'Economic Development Region (Eden)'
+    'Free State'
 ]
 
 # Create synthetic customer transaction data
@@ -30,11 +30,12 @@ data = {
 df = pd.DataFrame(data)
 
 # Simulate repeat customer purchases up to 5 times for 40% of customers
-repeat_customers = df['CustomerID'].sample(int(0.4 * num_transactions))
+repeat_customers = df['CustomerID'].sample(int(0.5 * num_transactions))
 for i, row in df.iterrows():
     if row['CustomerID'] in repeat_customers:
-        # Adjust PurchaseDate to simulate repeat purchases up to 5 times
-        for _ in range(min(fake.random_int(min=1, max=5), len(df) - len(repeat_customers))):
+        # Add between 1 and 5 new rows with new dates for each repeat customer
+        num_new_records = fake.random_int(min=1, max=10)
+        for _ in range(num_new_records):
             new_date = fake.date_between(start_date='-5y', end_date='today')
             
             df.loc[len(df)] = {
@@ -74,6 +75,6 @@ for i, row in df.iterrows():
     df.at[i, 'TotalAmount'] = quantity * price_per_unit * multiplier
 
 # Save to CSV
-df.to_csv('customer_transaction_data.csv', index=False)
+df.to_csv(r'data\customer_transaction_data.csv', index=False)
 
 print("Customer transaction data file created successfully.")
