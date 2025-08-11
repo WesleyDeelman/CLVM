@@ -1,10 +1,10 @@
 
 import numpy as np
 import pandas as pd
-import dataloader
-import joblib
+from dataloader import DataLoader
 import xgboost as xgb
 import dataloader
+import joblib
 
 class VintageCreator:
 
@@ -22,25 +22,25 @@ class VintageCreator:
         rfm_data = rfm_data.merge(segments,on=['CustomerID','date'],how='left')
         dem_data = loader.dedup_demographic_variables(self.trans_data)
         model_data = rfm_data.merge(dem_data,on='CustomerID',how='left')
-
-        columns_for_model_data = ['ConsumerID','date','recency',\
-                                  'frequency','monetary','rfm_score',\
+        columns_for_model_data = ['CustomerID','date','recency',\
+                                  'frequency','monetary',\
                                     'Gender','Age','Province',\
                                         'rfm_score_int']
         model = xgb.XGBClassifier()
-        model.load_model(r'PropensityToBuy.json')
-        model_data = model_data[columns_for_model_data].set_index('ConsumerID')
-        y_probs = model.predict(xgb.DMatrix(model_data))
+        model.load_model(r'd:\\VS CODE PROJECTS\\CLVM\\data\\PropensityToBuy.json')
+        model_data = model_data[columns_for_model_data].set_index(['CustomerID','date'])
+        encoder = joblib.load(r'data\encoder.pkl')
+        model_data = encoder.transform(model_data)
+        y_probs = model.predict(model_data)
         bins = joblib.load(r'data\score_bins.pkl')
         model_data['Score_Segments'] = pd.cut(y_probs, bins=bins, labels=False,include_lowest=True)
 
         data = self.trans_data.copy()
         first_purchase_date = data.groupby('CustomerID')['Date'].min().reset_index()
         data = data.merge(first_purchase_date.rename(columns={'Date': 'FirstPurchaseDate'}), on='CustomerID', how='left')
-        data['Vintage'] = np.ceil((data['Date'] - data['FirstPurchaseDate'])/7)
+        data['Vintage'] = ((data['Date'] - data['FirstPurchaseDate'])/7).round()
         data.drop(columns=['FirstPurchaseDate'], inplace=True)
         data = data.merge(model_data[['Score_Segments']], on='CustomerID', how='left')
-        
         return data.groupby(['Score_Segments','Vintage'])['Amount'].cumsum()
     
 

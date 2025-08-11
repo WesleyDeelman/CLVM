@@ -11,24 +11,24 @@ class DataLoader:
         Parameters:
             path (str): Path to the CSV file.
             customer_id (str): Column name for customer IDs.
-            transactionid (str): Column name for transaction IDs.
+            transaction_id (str): Column name for transaction IDs.
             transaction_date (str): Column name for transaction dates.
             amount (str): Column name for transaction amounts.
-
+        
         """
         self.path = path
         self.customer_id = customer_id
         self.transaction_id = transaction_id
         self.transaction_date = transaction_date 
         self.amount = amount 
-    
+        
     def fetch_data(self) -> pd.DataFrame:
         """
         Fetch raw CSV data from the specified path.
 
         Parameters:
             path (str): Path to the CSV file.
-
+        
         Returns:
             pd.DataFrame: Loaded data.
         """
@@ -49,7 +49,7 @@ class DataLoader:
 
         Parameters:
             snapshot_date (str): Date to calculate recency from (YYYY-MM-DD).
-
+        
         Returns:
             pd.DataFrame: RFM metrics per CustomerID.
         """
@@ -58,7 +58,6 @@ class DataLoader:
         data['Date'] = pd.to_datetime(data.Date)
         data  = data[(data.Date<snapshot) & (data.Date>(snapshot-window))]
         data['recency'] = (snapshot - pd.to_datetime(data['Date'])).dt.days
-        print(data)
         rfm = data.groupby('CustomerID').agg({
             'recency': 'min',
             'TransactionID': 'count',               # frequency: number of transactions
@@ -94,7 +93,6 @@ class DataLoader:
                             on='CustomerID', how='left')
         data['subsequent_purchases'] = data['subsequent_purchases'].fillna(0)
 
-
         data['target'] = data['CustomerID'].isin(target_customers).astype(int)
         data['date'] = date
         return data[['CustomerID','date','target','subsequent_purchases']].drop_duplicates()
@@ -106,7 +104,7 @@ class DataLoader:
         Parameters:
             date (str): Date to calculate recency from (YYYY-MM-DD).
             df (pd.DataFrame): Raw transactional data.
-
+        
         Returns:
             pd.DataFrame: RFM segments per CustomerID.
         """
@@ -120,74 +118,29 @@ class DataLoader:
                             data['f_score'].astype(str) + \
                             data['m_score'].astype(str)
         data['rfm_score_int'] = data['r_score'].astype(int) + \
-                            data['f_score'].astype(int)+ \
-                            data['m_score'].astype(int)           
+                                data['f_score'].astype(int)+ \
+                                data['m_score'].astype(int)           
         #create a dicitionary with the rfm_score that maps into segment, the key must be a regex
         segment_map = {
-                    r'^55[1-5]$': 'Champions',
-                    r'^54[1-5]$': 'Loyal Customers',
-                    r'^45[1-5]$': 'Potential Loyalists',
-                    r'^53[1-5]$': 'New or Returning Customers',
-                    r'^33[1-5]$': 'Promising',
-                    r'^22[1-5]$': 'Needs Attention',
-                    r'^\d{3}$': 'Others'  # Matches any other 3-digit score
-                }
+                        r'^55[1-5]$': 'Champions',
+                        r'^54[1-5]$': 'Loyal Customers',
+                        r'^45[1-5]$': 'Potential Loyalists',
+                        r'^53[1-5]$': 'New or Returning Customers',
+                        r'^33[1-5]$': 'Promising',
+                        r'^22[1-5]$': 'Needs Attention',
+                        r'^\d{3}$': 'Others'  # Matches any other 3-digit score
+                    }
         data['segment'] = data['rfm_score'].replace(segment_map, regex=True)
         data['date'] = date
         return data[['CustomerID', 'date', 'rfm_score','rfm_score_int', 'segment']]
     
     def dedup_demographic_variables(self,df: pd.DataFrame) -> pd.DataFrame:
         """
-        Deduplicate demographic variables for each customer, keeping the earliest entry.
-
-        Parameters:
-            df (pd.DataFrame): Raw transactional data with demographic information.
-
-        Returns:
-            pd.DataFrame: Deduplicated demographic data per CustomerID.
-        """
-        data = loader.fetch_data()
-        data['Date'] = pd.to_datetime(data['Date'])
-        
-        # Sort by CustomerID and Date to get the most recent demographic info
-        data = data.sort_values(by=['CustomerID', 'Date'], ascending=True)
-        
-        # Drop duplicates, keeping the last (most recent) entry for each CustomerID
-        # Assuming demographic variables are 'Gender', 'Age', 'Age Group', extend to the actual list
-        demographic_cols = ['CustomerID', 'Gender', 'Age','Province']
-        deduplicated_demographics = data[demographic_cols].drop_duplicates(subset=['CustomerID'], keep='first')
-        
-        return deduplicated_demographics
-    
-    def transaction_descriptor_variables(self,date) -> pd.DataFrame:
-        """
-        Caclulates mode transaction dimensions purchased from each customer
-        Parameters:
-            date (str): Date to calculate recency from (YYYY-MM-DD).
-        Returns:
-            pd.DataFrame: Most frequent transaction descriptors per CustomerID.
-        """
-
-        data = self.fetch_data()
-        data['Date'] = pd.to_datetime(data['Date'])
-        purchases = data[data.Date < date]
-        summary = purchases.groupby('CustomerID')[['ProductCategory','PurchaseChannel',
-                                       'PaymentMethod','Store']].agg(pd.Series.mode).reset_index()
-        summary['date'] = date
-        # Rename columns for clarity
-        summary.rename(columns={'ProductCategory': 'Most_frequented_Category',
-                                  'PurchaseChannel': 'Most_frequented_Channel',
-                                  'PaymentMethod': 'Most_used_payment_method',
-                                  'Store': 'Most_frequented_Store'}, inplace=True)
-        return summary[['CustomerID','date','Most_frequented_Channel','Most_frequented_Category','Most_used_payment_method','Most_frequented_Store']]
-    
-    def dedup_demographic_variables(self,df: pd.DataFrame) -> pd.DataFrame:
-        """
         Deduplicate demographic variables for each customer, keeping the latest entry.
-
+        
         Parameters:
             df (pd.DataFrame): Raw transactional data with demographic information.
-
+        
         Returns:
             pd.DataFrame: Deduplicated demographic data per CustomerID.
         """
@@ -204,12 +157,33 @@ class DataLoader:
         
         return deduplicated_demographics
     
+    def transaction_descriptor_variables(self,date) -> pd.DataFrame:
+        """
+        Caclulates mode transaction dimensions purchased from each customer
+        Parameters:
+            date (str): Date to calculate recency from (YYYY-MM-DD).
+        Returns:
+            pd.DataFrame: Most frequent transaction descriptors per CustomerID.
+        """
+
+        data = self.fetch_data()
+        data['Date'] = pd.to_datetime(data['Date'])
+        purchases = data[data.Date < date]
+        summary = purchases.groupby('CustomerID')[['ProductCategory','PurchaseChannel',
+                                        'PaymentMethod','Store']].agg(pd.Series.mode).reset_index()
+        summary['date'] = date
+        # Rename columns for clarity
+        summary.rename(columns={'ProductCategory': 'Most_frequented_Category',
+                                  'PurchaseChannel': 'Most_frequented_Channel',
+                                  'PaymentMethod': 'Most_used_payment_method',
+                                  'Store': 'Most_frequented_Store'}, inplace=True)
+        return summary[['CustomerID','date','Most_frequented_Channel','Most_frequented_Category','Most_used_payment_method','Most_frequented_Store']]
+    
+
 if __name__=='__main__':
-    loader = DataLoader('data\customer_transaction_data.csv','CustomerID','TransactionID','PurchaseDate','TotalAmount')
+    loader = DataLoader('data/customer_transaction_data.csv','CustomerID','TransactionID','PurchaseDate','TotalAmount')
     orig_data = loader.fetch_data()
     rfm = loader.calculate_rfm('2023-07-31',pd.Timedelta(days=99999),orig_data)
     print(rfm.head())
     demographics = loader.dedup_demographic_variables(orig_data)
     print(demographics.head())
-
-    
