@@ -44,13 +44,14 @@ class VintageOpt:
 
 if __name__ == '__main__':
     # Example Usage
-    # Generate some synthetic data that roughly follows a logistic growth curve
+    # Generate some synthetic data for demonstration
+    
     X_data = np.array(range(50))
     A_true, B_true = 25000, 0.23
     y_true_data = A_true * (1 - np.exp(-B_true * X_data))
 
     vintage_model = VintageOpt(y_true_data)
-    best_params, best_value = vintage_model.optimise(n_trials=2000)
+    best_params, best_value = vintage_model.optimise(n_trials=2500)
 
     print("Best parameters:", best_params)
     print("Best (negative) MSE:", best_value)
