@@ -1,5 +1,7 @@
-import optuna
 import numpy as np
+from scipy.optimize import minimize
+import optuna
+import matplotlib.pyplot as plt
 
 class VintageOpt:
 
@@ -10,25 +12,47 @@ class VintageOpt:
 
     def _objective(self, trial):
 
-        A = trial.suggest_float("A", 0, 100000000.0)
+        A = trial.suggest_float("A", 0, 100000)
         B = trial.suggest_float("B", 0, 1)
 
         y_pred = A * (1 - np.exp(-B * self.X))
         
         return np.mean((y_pred - self.y_true) ** 2)
 
-    def optimise(self, n_trials: int = 300):
+    def optimiseOptuna(self, n_trials: int = 300):
         self.study = optuna.create_study(direction="minimize")
         self.study.optimize(self._objective, n_trials=n_trials)
         return self.study.best_params, self.study.best_value
     
-    def plot(self):    
+    def optimiseSciPy(self, n_trials: int = 300): 
+        def _objective_scipy(params):
+            A, B = params
+            y_pred = A * (1 - np.exp(-B * self.X))
+            return np.mean((y_pred - self.y_true) ** 2)
 
-        if self.study is None:
-            raise ValueError("Optimize method must be called before plotting.")
+        # Initial guess for A and B
+        initial_guess = [np.max(self.y_true), 0.1] 
 
-        best_params = self.study.best_params
-        A, B = best_params["A"], best_params["B"]
+        # Bounds for A and B (A > 0, B > 0)
+        bounds = [(1e-6, None), (1e-6, None)]
+
+        result = minimize(_objective_scipy, initial_guess, bounds=bounds, options={'maxiter': n_trials})
+
+        return dict(zip(('A','B'),result.x))
+        
+    def plotOptuna(self,**params):    
+        y_pred = A * (1 - np.exp(-B * self.X))
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.X, self.y_true, label="True Values", marker='o', linestyle='-')
+        plt.plot(self.X, y_pred, label="Fitted Curve", linestyle='--')
+        plt.title("Vintage Curve Fit")
+        plt.xlabel("X")
+        plt.ylabel("y")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    def plotSciPy(self,**params):
         y_pred = A * (1 - np.exp(-B * self.X))
         import matplotlib.pyplot as plt
         plt.figure(figsize=(10, 6))
@@ -39,8 +63,7 @@ class VintageOpt:
         plt.ylabel("y")
         plt.legend()
         plt.grid(True)
-        plt.show()
-        
+        plt.show()        
 
 if __name__ == '__main__':
     # Example Usage
