@@ -38,27 +38,27 @@ class VintageOpt:
 
         result = minimize(_objective_scipy, initial_guess, bounds=bounds, options={'maxiter': n_trials})
 
-        return dict(zip(('A','B'),result.x))
+        return result.x[0], result.x[1]
         
-    def plotOptuna(self,**params):    
-        y_pred = A * (1 - np.exp(-B * self.X))
+    def plotOptuna(self,A,B,title_name):    
+        y_pred = A * (1 - np.exp(-'B' * self.X))
         plt.figure(figsize=(10, 6))
         plt.plot(self.X, self.y_true, label="True Values", marker='o', linestyle='-')
         plt.plot(self.X, y_pred, label="Fitted Curve", linestyle='--')
-        plt.title("Vintage Curve Fit")
+        plt.title(title_name)
         plt.xlabel("X")
         plt.ylabel("y")
         plt.legend()
         plt.grid(True)
         plt.show()
 
-    def plotSciPy(self,**params):
+    def plotSciPy(self,A,B,title_name):
         y_pred = A * (1 - np.exp(-B * self.X))
         import matplotlib.pyplot as plt
         plt.figure(figsize=(10, 6))
         plt.plot(self.X, self.y_true, label="True Values", marker='o', linestyle='-')
         plt.plot(self.X, y_pred, label="Fitted Curve", linestyle='--')
-        plt.title("Vintage Curve Fit")
+        plt.title(title_name)
         plt.xlabel("X")
         plt.ylabel("y")
         plt.legend()
@@ -74,12 +74,11 @@ if __name__ == '__main__':
     y_true_data = A_true * (1 - np.exp(-B_true * X_data))
 
     vintage_model = VintageOpt(y_true_data)
-    best_params, best_value = vintage_model.optimise(n_trials=2500)
+    result = vintage_model.optimiseSciPy(n_trials=2500)
 
-    print("Best parameters:", best_params)
-    print("Best (negative) MSE:", best_value)
+    print("Best parameters:", result)
 
-    vintage_model.plot()
+    vintage_model.plotSciPy(result[0],result[1])
 
     
         

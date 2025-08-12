@@ -1,11 +1,11 @@
 import pandas as pd
 from vintagecreator import VintageCreator
 import vintageopt
-
-vintagecreator = VintageCreator('2024-01-01')
+import matplotlib.pyplot as plt
+vintagecreator = VintageCreator('2023-01-01')
 vintages = vintagecreator.create_vintage()
 
-vo = vintageopt.VintageOpt(vintages.iloc[:,0])
-result = vo.optimiseSciPy(300)
-print(result)
-vo.plotSciPy(**result)
+for i,j in enumerate(['Low', 'Medium', 'High']):
+    vo = vintageopt.VintageOpt(vintages.iloc[:,i])
+    A,B = vo.optimiseSciPy(400)
+    vo.plotSciPy(A,B,j)
