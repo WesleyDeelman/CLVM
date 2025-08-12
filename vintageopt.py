@@ -14,7 +14,7 @@ class VintageOpt:
         B = trial.suggest_float("B", 0, 1)
 
         y_pred = A * (1 - np.exp(-B * self.X))
-        print(y_pred)
+        
         return np.mean((y_pred - self.y_true) ** 2)
 
     def optimise(self, n_trials: int = 300):
