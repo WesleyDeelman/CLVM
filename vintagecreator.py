@@ -78,7 +78,7 @@ class VintageCreator:
 
 
 if __name__=='__main__':
-    vintage = VintageCreator('2024-08-30')
+    vintage = VintageCreator('2020-08-30')
     vintage_curve = vintage.create_vintage()
     print(vintage_curve)
     
