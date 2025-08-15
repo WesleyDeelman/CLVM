@@ -15,20 +15,20 @@ class VintageCreator:
 
         loader = dataloader.DataLoader(path=r'data\customer_transaction_data.csv',customer_id='CustomerID',transaction_id='TransactionID',transaction_date='PurchaseDate',amount='TotalAmount')
         self.trans_data = loader.fetch_data()
-        self.trans_data['Date'] = pd.to_datetime(self.trans_data['Date'])
+        self.trans_data['date'] = pd.to_datetime(self.trans_data['date'])
         self.date = pd.to_datetime(self.date)
         rfm_data = loader.calculate_rfm(self.date,pd.Timedelta(days=99999),self.trans_data)
         segments = loader.rfm_segments(self.date,pd.Timedelta(days=99999),self.trans_data)
-        rfm_data = rfm_data.merge(segments,on=['CustomerID','date'],how='left')
+        rfm_data = rfm_data.merge(segments,on=['customer_id','date'],how='left')
         dem_data = loader.dedup_demographic_variables(self.trans_data)
-        model_data = rfm_data.merge(dem_data,on='CustomerID',how='left')
-        columns_for_model_data = ['CustomerID','date','recency',\
+        model_data = rfm_data.merge(dem_data,on='customer_id',how='left')
+        columns_for_model_data = ['customer_id','date','recency',\
                                   'frequency','monetary',\
                                     'Gender','Age','Province',\
                                         'rfm_score_int']
         model = xgb.Booster()
         model.load_model(r'data\PropensityToBuy.json')
-        model_data = model_data[columns_for_model_data].set_index(['CustomerID','date'])
+        model_data = model_data[columns_for_model_data].set_index(['customer_id','date'])
         encoder = joblib.load(r'data\encoder.pkl')
         model_data = encoder.transform(model_data)
         model_data['Score'] = model.predict(xgb.DMatrix(model_data))
@@ -42,28 +42,28 @@ class VintageCreator:
         scored_data = self.score_data()
 
         # Filter transactions to include only those after the snapshot date
-        future_transactions = self.trans_data[self.trans_data['Date'] > self.date].copy()
+        future_transactions = self.trans_data[self.trans_data['date'] > self.date].copy()
 
         # Merge scored data with future transactions
         merged_data = future_transactions.merge(
             scored_data[['Score_Segments']],
-            on='CustomerID',
+            on='customer_id',
             how='inner'
         )
 
         # Calculate weeks since snapshot date
-        merged_data['Weeks_Since_Snapshot'] = ((merged_data['Date'] - self.date).dt.days // 7).astype(int)
+        merged_data['Weeks_Since_Snapshot'] = ((merged_data['date'] - self.date).dt.days // 7).astype(int)
 
         # Aggregate weekly spend per segment
         weekly_spend = merged_data.groupby(
             ['Score_Segments', 'Weeks_Since_Snapshot']
-        )['Amount'].sum().reset_index()
+        )['amount'].sum().reset_index()
 
         # Pivot to wide format
         pivot = weekly_spend.pivot(
             index='Weeks_Since_Snapshot',
             columns='Score_Segments',
-            values='Amount'
+            values='amount'
         ).fillna(0)
 
         # Sort index and apply cumulative sum to ensure monotonicity

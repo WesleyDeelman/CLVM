@@ -28,7 +28,7 @@ class VintageOpt:
             return np.mean((y_pred - self.y_true) ** 2)
 
         initial_guess = [np.max(self.y_true), 0.1]
-        bounds = [(1e-6, None), (1e-6, None)]
+        bounds = [(1e-6, None), (1e-6, 1)]
 
         result = minimize(_objective_scipy, initial_guess, bounds=bounds, options={'maxiter': n_trials})
         return result.x[0], result.x[1]

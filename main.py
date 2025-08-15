@@ -7,5 +7,5 @@ vintages = vintagecreator.create_vintage()
 
 for i,j in enumerate(['Low', 'Medium', 'High']):
     vo = vintageopt.VintageOpt(vintages.iloc[:,i])
-    A,B = vo.optimiseSciPy(200)
+    A,B = vo.optimiseSciPy(2000)
     vo.plotSciPy(A,B,j)
