@@ -13,7 +13,7 @@ class VintageOpt:
     def _objective(self, trial):
         A = trial.suggest_float("A", 0, 100000)
         B = trial.suggest_float("B", 0, 1)
-        y_pred = A * (1 - np.exp(-B * self.X))
+        y_pred = A * self.X 
         return np.mean((y_pred - self.y_true) ** 2)
 
     def optimiseOptuna(self, n_trials: int = 300):
@@ -24,7 +24,7 @@ class VintageOpt:
     def optimiseSciPy(self, n_trials: int = 300):
         def _objective_scipy(params):
             A, B = params
-            y_pred = A * (1 - np.exp(-B * self.X))
+            y_pred = A * self.X 
             return np.mean((y_pred - self.y_true) ** 2)
 
         initial_guess = [np.max(self.y_true), 0.1]
@@ -34,7 +34,7 @@ class VintageOpt:
         return result.x[0], result.x[1]
 
     def plotOptuna(self, A, B, title_name):
-        y_pred = A * (1 - np.exp(-B * self.X))
+        y_pred = A * self.X 
         plt.figure(figsize=(10, 6))
         plt.plot(self.X, self.y_true, label="True Values", marker='o', linestyle='-')
         plt.plot(self.X, y_pred, label="Fitted Curve", linestyle='--')
@@ -46,7 +46,7 @@ class VintageOpt:
         plt.show()
 
     def plotSciPy(self, A, B, title_name):
-        y_pred = A * (1 - np.exp(-B * self.X))
+        y_pred = A * self.X 
         plt.figure(figsize=(10, 6))
         plt.plot(self.X, self.y_true, label="True Values", marker='o', linestyle='-')
         plt.plot(self.X, y_pred, label="Fitted Curve", linestyle='--')
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # Example Usage
     X_data = np.array(range(50))
     A_true, B_true = X_data.max(), 0.1
-    y_true_data = A_true * (1 - np.exp(-B_true * X_data))
+    y_true_data = A_true*X_data
 
     vintage_model = VintageOpt(y_true_data)
     A_fit, B_fit = vintage_model.optimiseSciPy(n_trials=2500)
